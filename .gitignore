@@ -1,0 +1,13 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+pdf/
+*.jpg
+*.jpeg
+nul
+.claude/
+.idea/
+build/
+dist/
+*.spec
