@@ -1,201 +1,192 @@
 # SpeedyPDF
+
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-Быстрый конвертер PDF в JPG с поддержкой многопоточности и многопроцессорности.
+Конвертер PDF в JPG на Python. Три движка на выбор, параллельная обработка, встроенный бенчмарк.
 
-## Возможности
+---
 
-- Пакетная конвертация всех PDF-файлов в папке
-- Рекурсивный обход вложенных директорий с сохранением структуры
-- Многопоточность через `ThreadPoolExecutor`
-- Альтернативная реализация через `ProcessPoolExecutor` (pypdfium2)
-- Выбор диапазона страниц
-- Настраиваемое качество (DPI, по умолчанию 300)
-- Несколько бэкендов: pdf2image + Poppler, pypdfium2, PyMuPDF
-- Встроенный бенчмарк для сравнения производительности
-- Прогресс-бар (tqdm)
-- Сборка в exe через PyInstaller
-
-## Технологии
-
-- Python 3.9+
-- pdf2image + Poppler
-- pypdfium2
-- PyMuPDF (fitz)
-- Pillow
-- tqdm
-- matplotlib (бенчмарки)
-
-## Установка
+## Быстрый старт
 
 ```bash
-git clone https://github.com/<username>/speedypdf.git
+git clone https://github.com/S1d18/speedypdf.git
 cd speedypdf
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Linux / macOS
 pip install -r requirements.txt
 ```
 
-### Дополнительные зависимости
+Положите PDF-файлы в папку `pdf/` и запустите:
 
-**Poppler** (нужен только для `pdf2image`):
-- Windows: скачать с [poppler-windows](https://github.com/oschwartz10612/poppler-windows/releases), распаковать, прописать путь в `config.py`
-- Linux: `sudo apt install poppler-utils`
-- macOS: `brew install poppler`
-
-**PyMuPDF** (нужен для бенчмарка):
 ```bash
-pip install PyMuPDF
+python main.py                  # pdf2image (требует Poppler)
+python pdfium_multiprocess.py   # pypdfium2 (ничего не требует)
 ```
 
-> `pypdfium2` и `PyMuPDF` не требуют Poppler -- у них свой встроенный рендерер.
+---
 
-## Использование
+## Движки конвертации
 
-### 1. Основной конвертер -- pdf2image + Poppler
+В проекте реализовано три движка. Каждый можно использовать отдельно:
+
+| Движок | Файл | Внешние зависимости | Параллелизм |
+|--------|------|---------------------|-------------|
+| **pdf2image** | `main.py` | Poppler | ThreadPoolExecutor |
+| **pypdfium2** | `pdfium_multiprocess.py` | -- | ProcessPoolExecutor |
+| **PyMuPDF** | только в бенчмарке | -- | -- |
+
+> **pypdfium2** и **PyMuPDF** содержат встроенный рендерер и не требуют установки Poppler.
+
+---
+
+## Конвертеры
+
+### main.py -- pdf2image + Poppler
+
+Основной конвертер. Рекурсивно обходит вложенные папки, сохраняет структуру директорий.
 
 ```bash
 python main.py
 ```
 
-Читает PDF из папки `pdf/`, сохраняет JPG в `jpg/`. Рекурсивно обходит вложенные папки, сохраняя структуру директорий. Использует многопоточность (`ThreadPoolExecutor`).
+**Требует** установленный [Poppler](https://github.com/oschwartz10612/poppler-windows/releases):
 
-**Требует:** установленный Poppler.
+| ОС | Установка |
+|----|-----------|
+| Windows | Скачать, распаковать, прописать путь в `config.py` |
+| Linux | `sudo apt install poppler-utils` |
+| macOS | `brew install poppler` |
 
-Настройки в `config.py`:
+**Настройки** -- файл `config.py`:
 
-| Параметр | Описание | По умолчанию |
-|----------|----------|--------------|
-| `POPLER_PATH` | Путь к папке `bin` Poppler | `C:/Program Files/poppler-24.07.0/Library/bin` |
-| `PDF_FOLDER` | Папка с исходными PDF | `pdf` |
-| `JPG_FOLDER` | Папка для сохранения JPG | `jpg` |
-| `MAX_WORKERS` | Количество потоков | `4` |
-| `FIRST_PAGE` | Первая страница для конвертации | `None` (все страницы) |
-| `LAST_PAGE` | Последняя страница для конвертации | `None` (все страницы) |
-
-Примеры настройки страниц:
 ```python
-# Конвертировать только первую страницу каждого PDF
-FIRST_PAGE = 1
-LAST_PAGE = 1
-
-# Конвертировать все страницы
-FIRST_PAGE = None
-LAST_PAGE = None
+POPLER_PATH  = r'C:/Program Files/poppler-24.07.0/Library/bin'
+PDF_FOLDER   = 'pdf'       # откуда читать
+JPG_FOLDER   = 'jpg'       # куда сохранять
+MAX_WORKERS  = 4            # количество потоков
+FIRST_PAGE   = None         # None = все страницы, 1 = только первая
+LAST_PAGE    = None         # None = все страницы, 1 = только первая
 ```
 
-### 2. Альтернативный конвертер -- pypdfium2
+---
+
+### pdfium_multiprocess.py -- pypdfium2
+
+Альтернативный конвертер. Не требует Poppler -- использует встроенный движок PDFium (тот же, что в Google Chrome).
 
 ```bash
 python pdfium_multiprocess.py
 ```
 
-Читает PDF из папки `pdf/`, сохраняет JPG в `pdf/convert/`. Использует многопроцессорность (`ProcessPoolExecutor`).
+**Настройки** -- в начале файла:
 
-**Не требует Poppler** -- pypdfium2 содержит встроенный рендерер PDFium (тот же движок, что в Chrome).
+```python
+pdf_folder     = Path("pdf")             # откуда читать
+convert_folder = pdf_folder / "convert"   # куда сохранять
+dpi            = 300                      # разрешение
+max_processes  = 8                        # количество процессов
+```
 
-Параметры задаются прямо в файле:
+---
 
-| Параметр | Описание | По умолчанию |
-|----------|----------|--------------|
-| `pdf_folder` | Папка с PDF | `pdf` |
-| `convert_folder` | Папка для JPG | `pdf/convert` |
-| `dpi` | Разрешение рендеринга | `300` |
-| `max_processes` | Количество процессов | `8` |
+## Бенчмарк
 
-### 3. Бенчмарк -- сравнение всех библиотек
+### benchmark.py -- сравнение всех трёх движков
+
+Тестирует каждый движок в трёх режимах: однопоток, многопоток, многопроцесс (всего 9 тестов).
 
 ```bash
+pip install PyMuPDF    # если ещё не установлен
 python benchmark.py
 ```
 
-Тестирует **3 библиотеки** в **3 режимах** (9 тестов):
+**Настройки** -- в начале файла:
 
-| Библиотека | Single-thread | Multi-thread | Multi-process |
-|------------|:---:|:---:|:---:|
-| PyMuPDF | + | + | + |
-| pdf2image | + | + | + |
-| pypdfium2 | + | + | + |
+```python
+PDF_FOLDER   = Path("pdf")
+DPI          = 300
+MAX_WORKERS  = 4
+POPPLER_PATH = r"C:/Program Files/poppler-24.07.0/Library/bin"
+```
 
-Параметры задаются в начале файла `benchmark.py`:
+**Что делает:**
+1. Прогоняет каждый движок в 3 режимах по всем PDF в папке
+2. Выводит сводную таблицу в консоль
+3. Сохраняет результаты в `benchmark_results.json`
+4. Удаляет временные изображения
 
-| Параметр | Описание | По умолчанию |
-|----------|----------|--------------|
-| `PDF_FOLDER` | Папка с тестовыми PDF | `pdf` |
-| `DPI` | Разрешение рендеринга | `300` |
-| `MAX_WORKERS` | Количество потоков/процессов | `4` |
-| `POPPLER_PATH` | Путь к Poppler (для pdf2image) | `C:/Program Files/poppler-24.07.0/Library/bin` |
+---
 
-По завершении:
-- Выводит сводную таблицу в консоль
-- Сохраняет детальные результаты в `benchmark_results.json`
-- Автоматически удаляет временные изображения
+### PyMuPDF_vs_pdf2image.py -- старый бенчмарк
 
-### 4. Старый бенчмарк -- PyMuPDF vs pdf2image
+Сравнивает только PyMuPDF и pdf2image в однопоточном режиме, строит график `benchmark_result.png`.
 
 ```bash
 python PyMuPDF_vs_pdf2image.py
 ```
 
-Сравнивает только PyMuPDF и pdf2image в однопоточном режиме, строит график `benchmark_result.png`.
+---
 
 ## Результаты бенчмарка
 
-**Система:** Windows 11 Pro | 12 ядер CPU | Python 3.11
-**Тест:** 100 PDF | 397 страниц | 300 DPI | 4 воркера
+> **Система:** Windows 11 Pro, 12 ядер CPU, Python 3.11
+> **Данные:** 100 PDF-файлов, 397 страниц, 300 DPI, 4 воркера
 
-### Время обработки (секунды, меньше = лучше)
+### Время (секунды)
 
-| Библиотека | Single | Thread x4 | Process x4 |
-|------------|-------:|----------:|-----------:|
-| PyMuPDF 1.27 | 222.55 | 229.88 | 103.46 |
-| pdf2image 1.17 | 218.12 | 111.93 | 104.33 |
-| **pypdfium2 5.7** | **53.09** | **21.75** | **22.49** |
+```
+                 1 поток     4 потока     4 процесса
+PyMuPDF          222.55      229.88       103.46
+pdf2image        218.12      111.93       104.33
+pypdfium2         53.09       21.75        22.49
+                                 ▲
+                            лучший результат
+```
 
-### Скорость (страниц/сек, больше = лучше)
+### Скорость (страниц в секунду)
 
-| Библиотека | Single | Thread x4 | Process x4 |
-|------------|-------:|----------:|-----------:|
-| PyMuPDF | 1.78 | 1.73 | 3.84 |
-| pdf2image | 1.82 | 3.55 | 3.81 |
-| **pypdfium2** | **7.48** | **18.25** | **17.65** |
+```
+                 1 поток     4 потока     4 процесса
+PyMuPDF            1.78        1.73         3.84
+pdf2image          1.82        3.55         3.81
+pypdfium2          7.48       18.25        17.65
+                                 ▲
+                          18.25 стр/с
+```
 
-### Выводы
+### Главное
 
-1. **pypdfium2 -- самый быстрый.** В однопотоке быстрее в 4 раза, с потоками -- в 5-10 раз.
+- **pypdfium2 быстрее в 5-10 раз** по сравнению с PyMuPDF и pdf2image
+- **Лучшая комбинация:** `pypdfium2 + ThreadPoolExecutor(4)` -- 21.75 сек на 397 страниц
+- **PyMuPDF** не ускоряется потоками (Python GIL), но ускоряется процессами в 2 раза
+- **pdf2image** ускоряется и потоками, и процессами примерно в 2 раза (Poppler на C, отпускает GIL)
+- Многопроцессорность для pypdfium2 не даёт выигрыша -- накладные расходы на IPC съедают разницу
 
-2. **Лучшая комбинация: `pypdfium2 + ThreadPoolExecutor(4)` -- 18.25 стр/с.**
-   Многопроцессорность не дает выигрыша из-за накладных расходов на IPC.
+### Что выбрать?
 
-3. **PyMuPDF** плохо параллелится через потоки (GIL не отпускается), но multiprocess дает ускорение в 2 раза.
+| Задача | Движок |
+|--------|--------|
+| Максимальная скорость конвертации | `pypdfium2` + потоки |
+| Poppler уже установлен в системе | `pdf2image` + процессы |
+| Нужен текст, аннотации, метаданные из PDF | `PyMuPDF` |
+| Деплой без внешних зависимостей | `pypdfium2` |
 
-4. **pdf2image** хорошо параллелится обоими способами (Poppler написан на C и отпускает GIL). Потоки и процессы дают примерно одинаковое ускорение ~2x.
-
-5. **pypdfium2 не требует Poppler** -- проще устанавливать и деплоить. Работает на встроенном движке PDFium (тот же, что в Google Chrome).
-
-### Какую библиотеку выбрать?
-
-| Сценарий | Рекомендация |
-|----------|-------------|
-| Максимальная скорость | pypdfium2 + ThreadPoolExecutor |
-| Poppler уже установлен | pdf2image + ProcessPoolExecutor |
-| Нужна работа с содержимым PDF (текст, аннотации) | PyMuPDF |
-| Простой деплой без внешних зависимостей | pypdfium2 |
+---
 
 ## Структура проекта
 
 ```
 speedypdf/
-  config.py                  # Настройки основного конвертера
-  main.py                    # Конвертер на pdf2image + Poppler
-  pdfium_multiprocess.py     # Конвертер на pypdfium2
-  benchmark.py               # Бенчмарк всех 3 библиотек
-  PyMuPDF_vs_pdf2image.py    # Старый бенчмарк (PyMuPDF vs pdf2image)
-  benchmark_results.json     # Результаты последнего бенчмарка
-  requirements.txt           # Зависимости
-  setup.py                   # Сборка
-  pdf/                       # Папка с исходными PDF
+├── config.py                 # настройки для main.py
+├── main.py                   # конвертер: pdf2image + Poppler
+├── pdfium_multiprocess.py    # конвертер: pypdfium2
+├── benchmark.py              # бенчмарк всех движков
+├── PyMuPDF_vs_pdf2image.py   # старый бенчмарк
+├── benchmark_results.json    # результаты бенчмарка
+├── requirements.txt
+├── setup.py
+└── pdf/                      # сюда кладёте PDF-файлы
 ```
 
 ## Лицензия
