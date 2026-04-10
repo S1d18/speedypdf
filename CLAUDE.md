@@ -16,7 +16,7 @@ pip install -r requirements.txt
 python main.py
 
 # Запуск альтернативного конвертера (pypdfium2, многопроцессорность)
-python pdffium_gpu_multi.py
+python pdfium_multiprocess.py
 
 # Запуск бенчмарка PyMuPDF vs pdf2image
 python PyMuPDF_vs_pdf2image.py
@@ -31,7 +31,7 @@ pyinstaller main.py
 
 - **main.py** — основной конвертер на базе `pdf2image` (требует Poppler). Многопоточность через `ThreadPoolExecutor`. Поддерживает рекурсивный обход папок и выбор конкретных страниц.
 
-- **pdffium_gpu_multi.py** — альтернативный конвертер на базе `pypdfium2`. Многопроцессорность через `ProcessPoolExecutor`. Не требует внешних зависимостей (Poppler).
+- **pdfium_multiprocess.py** — альтернативный конвертер на базе `pypdfium2`. Многопроцессорность через `ProcessPoolExecutor`. Не требует внешних зависимостей (Poppler).
 
 - **PyMuPDF_vs_pdf2image.py** — бенчмарк для сравнения производительности PyMuPDF и pdf2image.
 

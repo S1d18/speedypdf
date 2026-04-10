@@ -1,0 +1,78 @@
+{
+  "date": "2026-04-11T01:19:00",
+  "system": {
+    "os": "Windows 10 10.0.26100",
+    "cpu_cores": 12,
+    "python": "3.11"
+  },
+  "params": {
+    "dpi": 300,
+    "workers": 4,
+    "pdf_files": 100,
+    "total_pages": 397
+  },
+  "libraries": {
+    "PyMuPDF": "1.27.2.2",
+    "pdf2image": "1.17.0",
+    "pypdfium2": "5.7.0"
+  },
+  "results": {
+    "PyMuPDF": {
+      "single": {
+        "total_sec": 222.55,
+        "pages": 397,
+        "pages_per_sec": 1.78
+      },
+      "threaded": {
+        "total_sec": 229.88,
+        "workers": 4,
+        "pages": 397,
+        "pages_per_sec": 1.73
+      },
+      "multiprocess": {
+        "total_sec": 103.46,
+        "workers": 4,
+        "pages": 397,
+        "pages_per_sec": 3.84
+      }
+    },
+    "pdf2image": {
+      "single": {
+        "total_sec": 218.12,
+        "pages": 397,
+        "pages_per_sec": 1.82
+      },
+      "threaded": {
+        "total_sec": 111.93,
+        "workers": 4,
+        "pages": 397,
+        "pages_per_sec": 3.55
+      },
+      "multiprocess": {
+        "total_sec": 104.33,
+        "workers": 4,
+        "pages": 397,
+        "pages_per_sec": 3.81
+      }
+    },
+    "pypdfium2": {
+      "single": {
+        "total_sec": 53.09,
+        "pages": 397,
+        "pages_per_sec": 7.48
+      },
+      "threaded": {
+        "total_sec": 21.75,
+        "workers": 4,
+        "pages": 397,
+        "pages_per_sec": 18.25
+      },
+      "multiprocess": {
+        "total_sec": 22.49,
+        "workers": 4,
+        "pages": 397,
+        "pages_per_sec": 17.65
+      }
+    }
+  }
+}
